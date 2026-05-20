@@ -228,7 +228,7 @@ export const chatWithContext = async (question, chunks) => {
     }
 };
 
-export const explainConcept = async (concept, context = '') => {
+export const explainConceptWithContext = async (concept, context = '') => {
     try {
         console.log(`📝 Explaining concept: ${concept}`);
         
@@ -251,7 +251,7 @@ export const explainConcept = async (concept, context = '') => {
         return response.text.trim();
         
     } catch (error) {
-        console.error('❌ Error in explainConcept:', error);
+        console.error('❌ Error in explainConceptWithContext:', error);
         throw new Error(`Failed to explain concept: ${error.message}`);
     }
 };
