@@ -2,13 +2,13 @@ import { DeleteFileResponse } from "@google/genai";
 import mongoose from "mongoose";
 const flashcardSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,   
-        ref='User',
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true,
     },
     documentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref='Document', 
+        ref: 'Document',
         required: true,
     },  
     cards:[{

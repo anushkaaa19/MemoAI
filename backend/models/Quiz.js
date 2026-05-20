@@ -1,80 +1,79 @@
 import mongoose from "mongoose";
+
 const quizSchema = new mongoose.Schema({
     userId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,  // Changed from String
         ref: 'User',
         required: true,     
     },
     documentId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,  // Changed from String
         ref: 'Document',
         required: true,
     },
-    title:{
+    title: {
         type: String,
         required: true, 
         trim: true,
     },
-    questions:[{
-        question:{
+    questions: [{
+        question: {
             type: String,
             required: true,
         },
-        options:{
+        options: {
             type: [String],
             required: true, 
-            validate:[array=>array.length===4,'Exactly 4 options are required'],
+            validate: [array => array.length === 4, 'Exactly 4 options are required'],
         },
-        correctAnswer:{
+        correctAnswer: {
             type: String,
             required: true,
         },
-        explanation:{
+        explanation: {
             type: String,
-            default:'',
+            default: '',
         },
-        difficulty:{
+        difficulty: {
             type: String,
-            enum:['easy','medium','hard'],
-            default:'medium',
+            enum: ['easy', 'medium', 'hard'],
+            default: 'medium',
         },
     }],
-    userAnswers:[{
-        questionIndex:{
+    userAnswers: [{
+        questionIndex: {
             type: Number,
             required: true,
         },
-        selectedAnswer:{
+        selectedAnswer: {
             type: String,
             required: true,
-
         },
-        isCorrect:{
+        isCorrect: {
             type: Boolean,
             default: false,
         },
-        answeredAt:{
+        answeredAt: {
             type: Date,
             default: Date.now,
         },
-
     }],
-
-    score:{
+    score: {
         type: Number,   
         default: 0,
     },
-    totalQuestions:{    
+    totalQuestions: {    
         type: Number,
         required: true,
     },
-    completedAt:{
+    completedAt: {
         type: Date,
-            default: null
+        default: null
     },
 }, { timestamps: true });
 
-quizSchema.index({ userId: 1, documentId: 1 }, { unique: true });
+// Remove the unique index if you want multiple quizzes per document
+// quizSchema.index({ userId: 1, documentId: 1 }, { unique: true }); // ← Remove this line
+
 const Quiz = mongoose.model('Quiz', quizSchema);
 export default Quiz;
-
