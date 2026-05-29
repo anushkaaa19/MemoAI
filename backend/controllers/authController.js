@@ -27,7 +27,7 @@ export const register = async(req,res,next)=>{
                 data:{
                     user:{
                         id:user._id,
-                        username:user.name,
+                        username:user.username,
                         email:user.email,
                         profileImage:user.profileImage,
                         createdAt:user.createdAt,

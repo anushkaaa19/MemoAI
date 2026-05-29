@@ -1,0 +1,295 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 2935
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 24 Tf
+27.5999999999999979 TL
+0.2 0.2 0.4 rg
+56.6929133858267775 785.1970866141732586 Td
+(Artificial Intelligence) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0.392 g
+56.6929133858267775 742.6774015748030706 Td
+(A Complete Introduction) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0. g
+56.6929133858267775 685.9844881889763428 Td
+(Artificial Intelligence \(AI\) is the simulation of human intelligence in machines ) Tj
+T* (that are programmed to think and learn. The ideal characteristic of artificial ) Tj
+T* (intelligence is its ability to rationalize and take actions that have the best ) Tj
+T* (chance of achieving a specific goal.) Tj
+T* () Tj
+T* (There are three main types of AI:) Tj
+T* () Tj
+T* (1. Artificial Narrow Intelligence \(ANI\): Also known as weak AI, this type of AI ) Tj
+T* (   specializes in one area. Examples include virtual assistants like Siri and ) Tj
+T* (   Alexa, self-driving cars, and recommendation systems.) Tj
+T* () Tj
+T* (2. Artificial General Intelligence \(AGI\): This is strong AI that can perform any ) Tj
+T* (   intellectual task that a human being can do. AGI remains a theoretical concept ) Tj
+T* (   and is the goal of many AI research efforts.) Tj
+T* () Tj
+T* (3. Artificial Superintelligence \(ASI\): This would surpass human intelligence and ) Tj
+T* (   ability. ASI is currently a hypothetical concept often explored in science ) Tj
+T* (   fiction.) Tj
+T* () Tj
+T* (Machine Learning is a subset of AI that enables systems to learn and improve ) Tj
+T* (from experience without being explicitly programmed. It focuses on developing ) Tj
+T* (computer programs that can access data and use it to learn for themselves.) Tj
+T* () Tj
+T* (Deep Learning is a subset of machine learning that uses neural networks with ) Tj
+T* (multiple layers. These deep neural networks have revolutionized fields like ) Tj
+T* (computer vision, speech recognition, and natural language processing.) Tj
+T* () Tj
+T* (Neural networks are computing systems inspired by biological neural networks ) Tj
+T* (that constitute animal brains. They consist of interconnected nodes called ) Tj
+T* (neurons that process information using a connectionist approach to computation.) Tj
+T* () Tj
+T* (Natural Language Processing \(NLP\) is the ability of computers to understand, ) Tj
+T* (interpret, and generate human language. Applications include sentiment analysis, ) Tj
+T* (chatbots, translation services, and text summarization.) Tj
+T* () Tj
+T* (Computer Vision enables computers to derive meaningful information from digital ) Tj
+T* (images, videos, and other visual inputs. It powers facial recognition, medical ) Tj
+T* (image analysis, and autonomous vehicle navigation.) Tj
+T* () Tj
+T* (The future of AI includes advancements in explainable AI, federated learning, ) Tj
+T* (and edge AI. These technologies will make AI more transparent, privacy-focused, ) Tj
+T* (and accessible to everyone.) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 2.5.1)
+/CreationDate (D:20260520144937+05'30')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000003139 00000 n 
+0000004956 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000003196 00000 n 
+0000003321 00000 n 
+0000003451 00000 n 
+0000003584 00000 n 
+0000003721 00000 n 
+0000003844 00000 n 
+0000003973 00000 n 
+0000004105 00000 n 
+0000004241 00000 n 
+0000004369 00000 n 
+0000004496 00000 n 
+0000004625 00000 n 
+0000004758 00000 n 
+0000004860 00000 n 
+0000005204 00000 n 
+0000005290 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <7B34BCACF98DBA613C18AAC745D9220A> <7B34BCACF98DBA613C18AAC745D9220A> ]
+>>
+startxref
+5394
+%%EOF
