@@ -28,15 +28,18 @@ const generateSummary = async (documentId) => {
     }
 };
 
-const chat = async (documentId, message) => {
+const chat = async (documentId, question) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.AI.CHAT, { documentId, message });
+        const response = await axiosInstance.post(API_PATHS.AI.CHAT, {
+            documentId,
+            question
+        });
+
         return response.data;
     } catch (error) {
-        throw error.response.data || { message: 'Chat request failed' };
+        throw error.response?.data || { message: 'Chat request failed' };
     }
 };
-
 const explainConcept = async (documentId, concept) => {
     try {
         const response = await axiosInstance.post(API_PATHS.AI.EXPLAIN_CONCEPT, { documentId, concept });
