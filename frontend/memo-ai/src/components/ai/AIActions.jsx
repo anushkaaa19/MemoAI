@@ -28,22 +28,53 @@ const AIActions = () => {
       setLoadingAction(null);
     }
   };
+const handleGenerateFlashcards = async () => {
+  setLoadingAction("flashcards");
+  try {
+    const response = await aiService.generateFlashcards(documentId);
+    
+    // Count how many cards were generated
+    const cardCount = response?.data?.cards?.length || 0;
+    
+    setModalTitle("✅ Flashcards Generated!");
+    setModalContent(`
+## Successfully Generated ${cardCount} Flashcards!
 
-  const handleGenerateFlashcards = async () => {
-    setLoadingAction("flashcards");
-    try {
-      const response = await aiService.generateFlashcards(documentId);
-      const flashcards = response.data?.flashcards || response.flashcards;
-      setModalTitle("Generated Flashcards");
-      setModalContent(JSON.stringify(flashcards, null, 2));
-      setIsModalOpen(true);
-    } catch (error) {
-      toast.error("Failed to generate flashcards.");
-      console.error(error);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+Your flashcards have been created and saved to your account.
+
+### What would you like to do next?
+
+1. **Review them now** - Click on the **Flashcards** tab above
+2. **Generate more** - Click "Generate New" in the Flashcards tab
+3. **Continue studying** - Use the chat or other AI features
+
+---
+**Pro Tip:** You can star important flashcards and track your review progress!
+    `);
+    setIsModalOpen(true);
+    toast.success(`Generated ${cardCount} new flashcards!`);
+  } catch (error) {
+    console.error("Generate flashcards error:", error);
+    toast.error("Failed to generate flashcards.");
+    
+    setModalTitle("❌ Generation Failed");
+    setModalContent(`
+## Failed to Generate Flashcards
+
+**Error:** ${error.message || 'Unknown error'}
+
+Possible reasons:
+- The document might still be processing
+- Network connection issue
+- AI service temporarily unavailable
+
+Please try again in a few moments.
+    `);
+    setIsModalOpen(true);
+  } finally {
+    setLoadingAction(null);
+  }
+};
 
   const handleExplainConcept = async (e) => {
     e.preventDefault();

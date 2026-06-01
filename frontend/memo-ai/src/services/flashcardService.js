@@ -1,3 +1,4 @@
+// src/services/flashcardService.js
 import axiosInstance from '../utils/axiosInstance';
 import { API_PATHS } from '../utils/apiPaths';
 
@@ -13,21 +14,23 @@ const getAllFlashcardsSets = async () => {
 const getFlashcardsForDocument = async (documentId) => {
     try {
         const response = await axiosInstance.get(API_PATHS.FLASHCARDS.GET_FLASHCARDS_FOR_DOC(documentId));
+        console.log("getFlashcardsForDocument response:", response);
         return response.data;
     } catch (error) {
+        console.error("getFlashcardsForDocument error:", error);
         throw error.response?.data || { message: 'Failed to fetch flashcards' };
     }
 };
 
-const reviewFlashcard = async (cardId, cardIndex) => {
+// Change from POST to PUT
+const reviewFlashcard = async (cardId) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.FLASHCARDS.REVIEW_FLASHCARD(cardId), { cardIndex });
+        const response = await axiosInstance.put(API_PATHS.FLASHCARDS.REVIEW_FLASHCARD(cardId));
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to review flashcard' };
     }
 };
-
 const toggleStar = async (cardId) => {
     try {
         const response = await axiosInstance.put(API_PATHS.FLASHCARDS.TOGGLE_STAR(cardId));

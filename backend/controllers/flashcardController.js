@@ -5,7 +5,7 @@ import Flashcard from "../models/Flashcard.js";
 // @access  Private
 export const getFlashcards = async (req, res, next) => {
     try {
-        const flashcardSet = await Flashcard.findOne({
+        const flashcardSet = await Flashcard.find({
             documentId: req.params.documentId,
             userId: req.user._id
         }).populate('documentId', 'title fileName');

@@ -74,6 +74,7 @@ const quizSchema = new mongoose.Schema({
 
 // Remove the unique index if you want multiple quizzes per document
 // quizSchema.index({ userId: 1, documentId: 1 }, { unique: true }); // ← Remove this line
+quizSchema.index({ userId: 1, documentId: 1, createdAt: -1 });
 
 const Quiz = mongoose.model('Quiz', quizSchema);
 export default Quiz;

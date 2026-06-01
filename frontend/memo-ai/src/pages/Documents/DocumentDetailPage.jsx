@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import ChatInterface  from '../../components/chat/ChatInterface';
+import ChatInterface from '../../components/chat/ChatInterface';
 import { useParams, Link } from 'react-router-dom';
 import documentService from '../../services/documentService';
+import flashcardService from '../../services/flashcardService'; // Add this import
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
 import { ArrowLeft, ExternalLink, BookOpen, BrainCircuit, Clock, FileText, MessageSquare, Sparkles } from 'lucide-react';
 import moment from 'moment';
 import AIActions from '../../components/ai/AIActions';
-import Flashcard from '../../../../../backend/models/Flashcard';
-
+import Flashcard from '../../components/flashcards/Flashcard';
+import FlashcardManager from '../../components/flashcards/flashcardmanager';
+import QuizManager from '../../components/quizzes/QuizManager';
 const DocumentDetailPage = () => {
   const { id } = useParams();
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('content');
+  const [totalFlashcards, setTotalFlashcards] = useState(0); // Add this state
 
   useEffect(() => {
     const fetchDocumentDetails = async () => {
@@ -34,18 +37,49 @@ const DocumentDetailPage = () => {
     }
   }, [id]);
 
+  // Add this useEffect to fetch actual flashcard count
+  useEffect(() => {
+    const fetchFlashcardCount = async () => {
+      if (id) {
+        try {
+          const response = await flashcardService.getFlashcardsForDocument(id);
+          console.log("Flashcard response for count:", response);
+          
+          let flashcards = [];
+          
+          // Extract the array of sets
+          if (response?.data && Array.isArray(response.data)) {
+            flashcards = response.data;
+          } else if (response?.data?.data && Array.isArray(response.data.data)) {
+            flashcards = response.data.data;
+          } else if (Array.isArray(response)) {
+            flashcards = response;
+          }
+          
+          // Calculate total cards across all sets
+          const total = flashcards.reduce((sum, set) => sum + (set.cards?.length || 0), 0);
+          setTotalFlashcards(total);
+          console.log(`Total flashcards: ${total} from ${flashcards.length} sets`);
+        } catch (error) {
+          console.error("Failed to fetch flashcard count:", error);
+          setTotalFlashcards(0);
+        }
+      }
+    };
+    
+    fetchFlashcardCount();
+  }, [id]);
+
   // Helper function to get the full PDF URL
   const getPdfUrl = () => {
     if (!document?.filePath) return null;
 
     const filePath = document.filePath;
 
-    // If it's already a full URL, return it
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return filePath;
     }
 
-    // Otherwise, construct the full URL
     const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
     return `${baseUrl}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
   };
@@ -74,7 +108,6 @@ const DocumentDetailPage = () => {
       );
     }
 
-    // PDF Viewer
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -116,17 +149,10 @@ const DocumentDetailPage = () => {
     return <FlashcardManager documentId={id}/>
   };
 
-  const renderQuizzesTab = () => {
-    return (
-      <div className="text-center py-12">
-        <BrainCircuit className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">No quizzes yet</p>
-        <p className="text-sm text-gray-400 mt-1">
-          Use AI Actions to generate quizzes from this document
-        </p>
-      </div>
-    );
-  };
+ // In DocumentDetailPage.jsx
+const renderQuizzesTab = () => {
+  return <QuizManager documentId={id} documentTitle={document?.title} />
+};
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 KB';
@@ -166,7 +192,6 @@ const DocumentDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link 
@@ -188,13 +213,14 @@ const DocumentDetailPage = () => {
                   <Clock className="w-4 h-4" />
                   Uploaded {moment(document.createdAt).fromNow()}
                 </span>
-                {document.flashcardCount !== undefined && (
+                {/* Use calculated totalFlashcards instead of document.flashcardCount */}
+                {totalFlashcards > 0 && (
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-4 h-4" />
-                    {document.flashcardCount} Flashcards
+                    {totalFlashcards} {totalFlashcards === 1 ? 'Flashcard' : 'Flashcards'}
                   </span>
                 )}
-                {document.quizCount !== undefined && (
+                {document.quizCount !== undefined && document.quizCount > 0 && (
                   <span className="flex items-center gap-1">
                     <BrainCircuit className="w-4 h-4" />
                     {document.quizCount} Quizzes
@@ -211,7 +237,6 @@ const DocumentDetailPage = () => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="border-b border-gray-200">
