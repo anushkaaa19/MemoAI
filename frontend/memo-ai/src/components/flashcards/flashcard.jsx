@@ -14,6 +14,14 @@ const Flashcard = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const speechButtonRef = useRef(null);
+  
+  // 🔥 FIX: Use local state for isStarred that updates when prop changes
+  const [isStarred, setIsStarred] = useState(flashcard?.isStarred || false);
+
+  // 🔥 FIX: Update local state when flashcard prop changes
+  useEffect(() => {
+    setIsStarred(flashcard?.isStarred || false);
+  }, [flashcard?.isStarred]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -45,6 +53,11 @@ const Flashcard = ({
 
   const handleToggleStar = (e) => {
     e.stopPropagation();
+    
+    // 🔥 FIX: Optimistically update UI immediately
+    setIsStarred(!isStarred);
+    
+    // Call the parent's toggle function
     if (onToggleStar) {
       onToggleStar(flashcard._id || flashcard.id);
     }
@@ -53,7 +66,6 @@ const Flashcard = ({
   const handleSpeak = (e, text) => {
     e.stopPropagation();
     if ('speechSynthesis' in window) {
-      // Cancel any ongoing speech
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
@@ -62,7 +74,6 @@ const Flashcard = ({
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // Store reference to the button
       const button = e.currentTarget;
       
       utterance.onstart = () => {
@@ -90,8 +101,7 @@ const Flashcard = ({
   };
 
   // Review statistics
-  const reviewCount = flashcard.reviewCount || 0;
-  const isStarred = flashcard.isStarred || false;
+  const reviewCount = flashcard?.reviewCount || 0;
 
   return (
     <div className="relative w-full max-w-3xl mx-auto">
@@ -155,7 +165,7 @@ const Flashcard = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => handleSpeak(e, flashcard.question)}
+                        onClick={(e) => handleSpeak(e, flashcard?.question)}
                         className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all hover:scale-105"
                         aria-label="Speak question"
                       >
@@ -168,7 +178,7 @@ const Flashcard = ({
                   {/* Question content */}
                   <div className="min-h-[300px] flex items-center justify-center py-8">
                     <p className="text-gray-800 text-center text-2xl md:text-3xl leading-relaxed font-medium">
-                      {flashcard.question}
+                      {flashcard?.question}
                     </p>
                   </div>
 
@@ -206,7 +216,7 @@ const Flashcard = ({
                       )}
                     </div>
                     <button
-                      onClick={(e) => handleSpeak(e, flashcard.answer)}
+                      onClick={(e) => handleSpeak(e, flashcard?.answer)}
                       className="p-2 rounded-full bg-white/50 hover:bg-white transition-all hover:scale-105"
                       aria-label="Speak answer"
                     >
@@ -217,10 +227,10 @@ const Flashcard = ({
                   {/* Answer content */}
                   <div className="flex-1 flex items-center justify-center py-8">
                     <div className="text-gray-800 text-center text-xl md:text-2xl leading-relaxed">
-                      {flashcard.answer.split('\n').map((line, i) => (
+                      {flashcard?.answer?.split('\n').map((line, i) => (
                         <React.Fragment key={i}>
                           {line}
-                          {i < flashcard.answer.split('\n').length - 1 && <br />}
+                          {i < (flashcard?.answer?.split('\n').length || 0) - 1 && <br />}
                         </React.Fragment>
                       ))}
                     </div>

@@ -11,15 +11,16 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import moment from "moment";
-
 import flashcardService from "../../services/flashcardService";
 import aiService from "../../services/aiService";
+
 import Spinner from "../common/Spinner";
 import Flashcard from "./Flashcard";
 
-const FlashcardManager = ({ documentId, onBack }) => {
+const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
   const [flashcardSets, setFlashcardSets] = useState([]);
   const [selectedSet, setSelectedSet] = useState(null);
+  const [autoSelectAttempted, setAutoSelectAttempted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -27,41 +28,51 @@ const FlashcardManager = ({ documentId, onBack }) => {
   const [deleting, setDeleting] = useState(false);
   const [setToDelete, setSetToDelete] = useState(null);
 
-  const fetchFlashcardSets = async () => {
-    setLoading(true);
-    try {
-      const response = await flashcardService.getFlashcardsForDocument(documentId);
-      console.log("Full Response:", response);
+ const fetchFlashcardSets = async () => {
+  setLoading(true);
+  try {
+    const response = await flashcardService.getFlashcardsForDocument(documentId);
+    console.log("Full Response:", response);
 
-      let flashcards = [];
-      
-      // Handle backend response structure
-      if (response?.data && Array.isArray(response.data)) {
-        flashcards = response.data;
-      } else if (response?.data?.data && Array.isArray(response.data.data)) {
-        flashcards = response.data.data;
-      } else if (Array.isArray(response)) {
-        flashcards = response;
-      } else if (response?.data?.flashcards && Array.isArray(response.data.flashcards)) {
-        flashcards = response.data.flashcards;
-      }
-      
-      console.log("Parsed flashcards:", flashcards.length, "sets");
-      setFlashcardSets(flashcards);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch flashcard sets");
-      setFlashcardSets([]);
-    } finally {
-      setLoading(false);
+    let flashcards = [];
+    
+    // Handle backend response structure
+    if (response?.data && Array.isArray(response.data)) {
+      flashcards = response.data;
+    } else if (response?.data?.data && Array.isArray(response.data.data)) {
+      flashcards = response.data.data;
+    } else if (Array.isArray(response)) {
+      flashcards = response;
+    } else if (response?.data?.flashcards && Array.isArray(response.data.flashcards)) {
+      flashcards = response.data.flashcards;
     }
-  };
+    
+    console.log("Parsed flashcards:", flashcards.length, "sets");
+    setFlashcardSets(flashcards);
+     if (selectedSetId && flashcards.length > 0 && !autoSelectAttempted && !selectedSet) {
+      const setToSelect = flashcards.find(set => set._id === selectedSetId);
+      if (setToSelect) {
+        console.log("Auto-selecting set:", setToSelect.title);
+        setSelectedSet(setToSelect);
+        setCurrentCardIndex(0);
+      }
+      setAutoSelectAttempted(true);
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to fetch flashcard sets");
+    setFlashcardSets([]);
+  } finally {
+    setLoading(false);
+  }
+};
+   
 
   useEffect(() => {
     if (documentId) {
       fetchFlashcardSets();
     }
-  }, [documentId]);
+}, [documentId, selectedSetId]); 
 
   const handleGenerateFlashcards = async () => {
     setGenerating(true);

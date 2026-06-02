@@ -42,7 +42,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
                 <BrainCircuit className="text-white" size={20} strokeWidth={2.5} />
             </div>
 
-            <h1 className="text-sm md:text-base font-bold text-slate-900 tracking-tight">AI Learning Assistant</h1>
+            <h1 className="text-sm md:text-base font-bold text-slate-900 tracking-tight">Memo-AI</h1>
         </div>
 
         <button onClick={toggleSidebar} className="md:hidden text-slate-500 hover:text-slate-800">

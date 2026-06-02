@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ChatInterface from '../../components/chat/ChatInterface';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link,useLocation } from 'react-router-dom';
 import documentService from '../../services/documentService';
 import flashcardService from '../../services/flashcardService'; // Add this import
 import Spinner from '../../components/common/Spinner';
@@ -13,11 +13,21 @@ import FlashcardManager from '../../components/flashcards/flashcardmanager';
 import QuizManager from '../../components/quizzes/QuizManager';
 const DocumentDetailPage = () => {
   const { id } = useParams();
+  const location = useLocation();
+const [selectedFlashcardSetId, setSelectedFlashcardSetId] = useState(null);
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('content');
   const [totalFlashcards, setTotalFlashcards] = useState(0); // Add this state
-
+useEffect(() => {
+  // Check if we have state from navigation (coming from FlashcardsListPage)
+  if (location.state?.selectedFlashcardSetId) {
+    console.log("Found selectedFlashcardSetId:", location.state.selectedFlashcardSetId);
+    setSelectedFlashcardSetId(location.state.selectedFlashcardSetId);
+    // Automatically switch to flashcards tab
+    setActiveTab('flashcards');
+  }
+}, [location]);
   useEffect(() => {
     const fetchDocumentDetails = async () => {
       try {
@@ -145,9 +155,15 @@ const DocumentDetailPage = () => {
     return <AIActions/>
   };
 
-  const renderFlashcardsTab = () => {
-    return <FlashcardManager documentId={id}/>
-  };
+const renderFlashcardsTab = () => {
+  return (
+    <FlashcardManager 
+      documentId={id} 
+      selectedSetId={selectedFlashcardSetId}
+      onBack={() => setSelectedFlashcardSetId(null)}
+    />
+  );
+};
 
  // In DocumentDetailPage.jsx
 const renderQuizzesTab = () => {
