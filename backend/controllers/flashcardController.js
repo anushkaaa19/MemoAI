@@ -100,36 +100,53 @@ export const reviewFlashcard = async (req, res, next) => {
     }
 };
 
-// @desc    Toggle star/unstar a flashcard
-// @route   PUT /api/flashcards/star/:cardId
-// @access  Private
 export const toggleStarFlashcard = async (req, res, next) => {
     try {
+        console.log("========== STAR REQUEST ==========");
+        console.log("cardId:", req.params.cardId);
+
         const flashcardSet = await Flashcard.findOne({
             'cards._id': req.params.cardId,
             userId: req.user._id
         });
 
         if (!flashcardSet) {
+            console.log("Flashcard set NOT FOUND");
             return res.status(404).json({
                 success: false,
-                error: 'Flashcard not found',
-                statusCode: 404
+                error: 'Flashcard not found'
             });
         }
 
-        const cardIndex = flashcardSet.cards.findIndex(card => card._id.toString() === req.params.cardId);
+        const cardIndex = flashcardSet.cards.findIndex(
+            card => card._id.toString() === req.params.cardId
+        );
 
-        if (cardIndex === -1) {
-            return res.status(404).json({
-                success: false,
-                error: 'Flashcard not found in set',
-                statusCode: 404
-            });
-        }
+        console.log("cardIndex:", cardIndex);
 
-        flashcardSet.cards[cardIndex].isStarred = !flashcardSet.cards[cardIndex].isStarred;
+        const card = flashcardSet.cards[cardIndex];
+
+        console.log("BEFORE toggle:");
+        console.log({
+            id: card._id.toString(),
+            isStarred: card.isStarred
+        });
+
+        card.isStarred = !card.isStarred;
+
+        console.log("AFTER toggle:");
+        console.log({
+            id: card._id.toString(),
+            isStarred: card.isStarred
+        });
+
         await flashcardSet.save();
+
+        console.log("AFTER SAVE:");
+        console.log({
+            id: flashcardSet.cards[cardIndex]._id.toString(),
+            isStarred: flashcardSet.cards[cardIndex].isStarred
+        });
 
         res.status(200).json({
             success: true,
@@ -137,15 +154,18 @@ export const toggleStarFlashcard = async (req, res, next) => {
                 card: flashcardSet.cards[cardIndex],
                 isStarred: flashcardSet.cards[cardIndex].isStarred
             },
-            message: `Flashcard ${flashcardSet.cards[cardIndex].isStarred ? 'starred' : 'unstarred'} successfully`,
-            statusCode: 200
+            message: `Flashcard ${
+                flashcardSet.cards[cardIndex].isStarred
+                    ? "starred"
+                    : "unstarred"
+            } successfully`
         });
+
     } catch (error) {
-        console.error('Error in toggleStarFlashcard:', error);
+        console.error(error);
         next(error);
     }
 };
-
 // @desc    Delete an entire flashcard set
 // @route   DELETE /api/flashcards/:id
 // @access  Private

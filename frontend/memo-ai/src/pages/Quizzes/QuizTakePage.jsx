@@ -57,35 +57,43 @@ const QuizTakePage = () => {
       setCurrentQuestion(currentQuestion - 1);
     }
   };
+const handleSubmit = async () => {
+  const unanswered = answers.some(a => a === null);
 
-  const handleSubmit = async () => {
-    // Check if all questions are answered
-    const unanswered = answers.some(a => a === null);
-    if (unanswered) {
-      toast.error('Please answer all questions before submitting');
-      return;
-    }
+  if (unanswered) {
+    toast.error('Please answer all questions before submitting');
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      const response = await quizService.submitQuiz(quizId, answers);
-      toast.success('Quiz submitted successfully!');
-      
-      // ✅ FIXED: Navigate to correct results URL matching your routes
-      navigate(`/quizzes/${quizId}/results`, {
-        state: { 
-          score: response.data.score,
-          total: quiz.questions.length,
-          answers: answers,
-          questions: quiz.questions
-        }
-      });
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-      toast.error('Failed to submit quiz');
-      setSubmitting(false);
-    }
-  };
+  setSubmitting(true);
+
+  try {
+    const formattedAnswers = answers.map((answerIndex, index) => ({
+      questionIndex: index,
+      selectedAnswer: quiz.questions[index].options[answerIndex]
+    }));
+
+    const response = await quizService.submitQuiz(
+      quizId,
+      formattedAnswers
+    );
+
+    toast.success('Quiz submitted successfully!');
+
+    navigate(`/quizzes/${quizId}/results`);
+
+  } catch (error) {
+    console.error(error);
+
+    toast.error(
+      error?.error ||
+      error?.message ||
+      'Failed to submit quiz'
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);

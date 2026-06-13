@@ -13,49 +13,79 @@ import toast from "react-hot-toast";
 import moment from "moment";
 import flashcardService from "../../services/flashcardService";
 import aiService from "../../services/aiService";
-
 import Spinner from "../common/Spinner";
 import Flashcard from "./Flashcard";
 
 const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
   const [flashcardSets, setFlashcardSets] = useState([]);
   const [selectedSet, setSelectedSet] = useState(null);
-  const [autoSelectAttempted, setAutoSelectAttempted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [setToDelete, setSetToDelete] = useState(null);
-
- const fetchFlashcardSets = async () => {
+  const [autoSelectAttempted, setAutoSelectAttempted] = useState(false);
+useEffect(() => {
+  console.log(
+    "SELECTED SET CHANGED:",
+    selectedSet?.cards?.map(card => ({
+      id: card._id,
+      starred: card.isStarred
+    }))
+  );
+}, [selectedSet]);
+const fetchFlashcardSets = async () => {
   setLoading(true);
+
   try {
     const response = await flashcardService.getFlashcardsForDocument(documentId);
+
     console.log("Full Response:", response);
 
     let flashcards = [];
-    
-    // Handle backend response structure
+
     if (response?.data && Array.isArray(response.data)) {
       flashcards = response.data;
     } else if (response?.data?.data && Array.isArray(response.data.data)) {
       flashcards = response.data.data;
     } else if (Array.isArray(response)) {
       flashcards = response;
-    } else if (response?.data?.flashcards && Array.isArray(response.data.flashcards)) {
-      flashcards = response.data.flashcards;
     }
-    
+
     console.log("Parsed flashcards:", flashcards.length, "sets");
+
+    // DEBUG ALL CARDS
+    flashcards.forEach((set) => {
+      console.log("SET:", set.title);
+
+      set.cards?.forEach((card) => {
+        console.log("CARD FROM API:", {
+          id: card._id,
+          isStarred: card.isStarred,
+        });
+      });
+    });
+
     setFlashcardSets(flashcards);
-     if (selectedSetId && flashcards.length > 0 && !autoSelectAttempted && !selectedSet) {
-      const setToSelect = flashcards.find(set => set._id === selectedSetId);
+
+    if (
+      selectedSetId &&
+      flashcards.length > 0 &&
+      !autoSelectAttempted &&
+      !selectedSet
+    ) {
+      const setToSelect = flashcards.find(
+        (set) => set._id === selectedSetId
+      );
+
       if (setToSelect) {
         console.log("Auto-selecting set:", setToSelect.title);
+
         setSelectedSet(setToSelect);
         setCurrentCardIndex(0);
       }
+
       setAutoSelectAttempted(true);
     }
   } catch (error) {
@@ -66,13 +96,12 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
     setLoading(false);
   }
 };
-   
 
   useEffect(() => {
     if (documentId) {
       fetchFlashcardSets();
     }
-}, [documentId, selectedSetId]); 
+  }, [documentId, selectedSetId]);
 
   const handleGenerateFlashcards = async () => {
     setGenerating(true);
@@ -93,6 +122,16 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
 
     try {
       await flashcardService.reviewFlashcard(currentCard._id);
+      // Update local state without refetching
+      if (selectedSet) {
+        const updatedCards = [...selectedSet.cards];
+        updatedCards[currentCardIndex] = {
+          ...updatedCards[currentCardIndex],
+          reviewCount: (updatedCards[currentCardIndex].reviewCount || 0) + 1,
+          lastReviewed: new Date()
+        };
+        setSelectedSet({ ...selectedSet, cards: updatedCards });
+      }
     } catch (error) {
       console.error("Failed to review flashcard:", error);
     }
@@ -117,32 +156,67 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
     }
   };
 
-  const handleToggleStar = async (cardId) => {
-    console.log("Toggling star for card:", cardId);
-    try {
-      const result = await flashcardService.toggleStar(cardId);
-      console.log("Star toggle response:", result);
-      
-      // Refresh the flashcard sets
-      await fetchFlashcardSets();
-      
-      // Update the selected set with fresh data
-      if (selectedSet) {
-        const updatedSet = flashcardSets.find(s => s._id === selectedSet._id);
-        if (updatedSet) {
-          setSelectedSet(updatedSet);
-          const updatedCard = updatedSet.cards.find(c => c._id === cardId);
-          console.log("Updated card star status:", updatedCard?.isStarred);
-        }
-      }
-      
-      toast.success(result.message || "Star status updated!");
-    } catch (error) {
-      console.error("Star toggle error:", error);
-      toast.error("Failed to update star status");
-    }
-  };
+const handleToggleStar = async (cardId, currentState) => {
+  console.log("========== FRONTEND TOGGLE ==========");
+  console.log("cardId:", cardId);
+  console.log("currentState:", currentState);
 
+  const currentCard = selectedSet?.cards?.find(
+    (c) => c._id === cardId
+  );
+
+  console.log("CARD IN STATE:", currentCard);
+
+  const newStarValue = !currentState;
+
+  console.log("NEW STAR VALUE:", newStarValue);
+
+  const updatedSets = flashcardSets.map((set) =>
+    set._id === selectedSet?._id
+      ? {
+          ...set,
+          cards: set.cards.map((card) =>
+            card._id === cardId
+              ? { ...card, isStarred: newStarValue }
+              : card
+          ),
+        }
+      : set
+  );
+
+  setFlashcardSets(updatedSets);
+
+  setSelectedSet((prevSet) => {
+    if (!prevSet) return prevSet;
+
+    const updated = {
+      ...prevSet,
+      cards: prevSet.cards.map((card) =>
+        card._id === cardId
+          ? { ...card, isStarred: newStarValue }
+          : card
+      ),
+    };
+
+    console.log(
+      "UPDATED SELECTED CARD:",
+      updated.cards.find((c) => c._id === cardId)
+    );
+
+    return updated;
+  });
+
+  try {
+    const res = await flashcardService.toggleStar(cardId);
+
+    console.log("SERVER RESPONSE:", res);
+
+    // IMPORTANT
+    await fetchFlashcardSets();
+  } catch (error) {
+    console.error(error);
+  }
+};
   const handleDeleteRequest = (e, set) => {
     e.stopPropagation();
     setSetToDelete(set);
@@ -188,10 +262,13 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
     }
 
     const currentCard = selectedSet.cards[currentCardIndex];
+    console.log("CURRENT CARD BEFORE RENDER:", {
+  id: currentCard._id,
+  isStarred: currentCard.isStarred,
+});
 
     return (
       <div className="max-w-2xl mx-auto">
-        {/* Progress indicator */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={handleBackToSets}
@@ -204,25 +281,26 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
             Card {currentCardIndex + 1} of {selectedSet.cards.length}
           </div>
         </div>
+        
 
-        {/* Flashcard */}
-        // In FlashcardManager.jsx, update the renderFlashcardViewer
-<Flashcard
-  flashcard={{
-    ...currentCard,
-    reviewCount: currentCard.reviewCount || 0,
-    lastReviewed: currentCard.lastReviewed,
-    isStarred: currentCard.isStarred || false
-  }}
-  onToggleStar={handleToggleStar}
-  onNext={handleNextCard}
-  onPrevious={handlePrevCard}
-  currentIndex={currentCardIndex}
-  totalCards={selectedSet.cards.length}
-  showNavigation={true}
-/>
+        {/* REMOVED THE BROKEN COMMENT HERE */}
+        
+        <Flashcard
+        
+          flashcard={{
+            ...currentCard,
+            reviewCount: currentCard.reviewCount || 0,
+            lastReviewed: currentCard.lastReviewed,
+            isStarred: currentCard.isStarred || false
+          }}
+          onToggleStar={handleToggleStar}
+          onNext={handleNextCard}
+          onPrevious={handlePrevCard}
+          currentIndex={currentCardIndex}
+          totalCards={selectedSet.cards.length}
+          showNavigation={true}
+        />
 
-        {/* Simple navigation buttons if needed (Flashcard component already has them) */}
         <div className="flex items-center justify-center gap-4 mt-6 md:hidden">
           <button
             onClick={handlePrevCard}
@@ -267,7 +345,6 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
 
     return (
       <div>
-        {/* Header with generate button */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Flashcard Sets</h3>
@@ -285,7 +362,6 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
           </button>
         </div>
 
-        {/* Flashcard sets grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {flashcardSets.map((set, idx) => (
             <div
@@ -342,7 +418,6 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
     <>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-5xl mx-auto px-6 py-8">
-          {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
@@ -355,12 +430,10 @@ const FlashcardManager = ({ documentId, onBack, selectedSetId = null }) => {
             </p>
           </div>
 
-          {/* Main content */}
           {selectedSet ? renderFlashcardViewer() : renderSetList()}
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIsDeleteModalOpen(false)} />

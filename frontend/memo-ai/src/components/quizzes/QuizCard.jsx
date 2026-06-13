@@ -5,9 +5,7 @@ import { Trash2, Award, BarChart2, Play, Clock, Brain } from 'lucide-react';
 import moment from 'moment';
 
 const QuizCard = ({ quiz, onDelete }) => {
-  const hasAttempted = quiz.score !== undefined && quiz.score > 0;
-  const totalQuestions = quiz.totalQuestions || quiz.questions?.length || 0;
-  
+  const hasAttempted = !!quiz.completedAt;
   return (
     <div className="group bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-purple-200 transition-all overflow-hidden">
       <div className="p-5">
@@ -32,7 +30,7 @@ const QuizCard = ({ quiz, onDelete }) => {
               </div>
             </div>
           </div>
-          
+
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -52,8 +50,7 @@ const QuizCard = ({ quiz, onDelete }) => {
               <Award className="w-4 h-4 text-gray-400" strokeWidth={2.5} />
               <span className="text-sm text-gray-600">Score:</span>
               <div className="px-2 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-600">
-                {quiz.score}/{totalQuestions}
-              </div>
+                {quiz.score}%              </div>
             </div>
           </div>
         )}
@@ -63,16 +60,16 @@ const QuizCard = ({ quiz, onDelete }) => {
           {hasAttempted ? (
             <>
               {/* View Results Button - Matches your route */}
-              <Link 
+              <Link
                 to={`/quizzes/${quiz._id}/results`}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all"
               >
                 <BarChart2 className="w-4 h-4" strokeWidth={2} />
                 View Results
               </Link>
-              
+
               {/* Retake Quiz Button - Using quizzes route */}
-              <Link 
+              <Link
                 to={`/quizzes/${quiz._id}`}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-all"
               >
@@ -82,7 +79,7 @@ const QuizCard = ({ quiz, onDelete }) => {
             </>
           ) : (
             /* Start Quiz Button - Using quizzes route */
-            <Link 
+            <Link
               to={`/quizzes/${quiz._id}`}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
             >

@@ -33,10 +33,20 @@ const reviewFlashcard = async (cardId) => {
 };
 const toggleStar = async (cardId) => {
     try {
-        const response = await axiosInstance.put(API_PATHS.FLASHCARDS.TOGGLE_STAR(cardId));
+        const response = await axiosInstance.put(
+            API_PATHS.FLASHCARDS.TOGGLE_STAR(cardId)
+        );
+
+        console.log("API RESPONSE:", response.data);
+        console.log("BACKEND STAR VALUE:",
+            response?.data?.data?.isStarred
+        );
+
         return response.data;
     } catch (error) {
-        throw error.response?.data || { message: 'Failed to update star status' };
+        throw error.response?.data || {
+            message: 'Failed to update star status'
+        };
     }
 };
 

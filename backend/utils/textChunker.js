@@ -10,102 +10,45 @@ export const chunkText = (text, chunkSize = 500, overlap = 50) => {
         return [];
     }
 
-    // Clean text while preserving paragraph structure
-    const cleanedText = text
-        .replace(/\r\n/g, '\n')
-        .replace(/\s+/g, ' ')
-        .replace(/\n /g,  '\n')
-        .replace(/ \n/g, '\n')
-        .trim();
-
-    // Try to split by paragraphs (double newlines)
-    const paragraphs = cleanedText.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    // Clean the text - replace all newlines with spaces
+    const cleanedText = text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     
-    // If no paragraphs with double newlines, try single newlines
-    const finalParagraphs = paragraphs.length > 0 ? paragraphs : cleanedText.split(/\n/).filter(p => p.trim().length > 0);
+    // Split into words
+    const words = cleanedText.split(' ');
     
-    const chunks = [];
-    let currentChunk = [];
-    let currentWordCount = 0;
-    let chunkIndex = 0;
-
-    for (const paragraph of finalParagraphs) {
-        const paragraphWords = paragraph.trim().split(/\s+/);
-        const paragraphWordCount = paragraphWords.length;
-
-        // If single paragraph exceeds chunk size, split it by words
-        if (paragraphWordCount > chunkSize) {
-            // Save current chunk if it exists
-            if (currentChunk.length > 0) {
-                chunks.push({
-                    content: currentChunk.join('\n\n'),
-                    chunkIndex: chunkIndex++,
-                    pageNumber: 0
-                });
-                currentChunk = [];
-                currentWordCount = 0;
-            }
-
-            // Split large paragraph into word-based chunks
-            for (let i = 0; i < paragraphWords.length; i += (chunkSize - overlap)) {
-                const chunkWords = paragraphWords.slice(i, i + chunkSize);
-                if (chunkWords.length > 0) {
-                    chunks.push({
-                        content: chunkWords.join(' '),
-                        chunkIndex: chunkIndex++,
-                        pageNumber: 0
-                    });
-                }
-                if (i + chunkSize >= paragraphWords.length) break;
-            }
-            continue;
-        }
-
-        // If adding this paragraph exceeds chunk size, save current chunk
-        if (currentWordCount + paragraphWordCount > chunkSize && currentChunk.length > 0) {
-            chunks.push({
-                content: currentChunk.join('\n\n'),
-                chunkIndex: chunkIndex++,
-                pageNumber: 0
-            });
-
-            // Create overlap from previous chunk
-            const prevChunkText = currentChunk.join(' ');
-            const prevWords = prevChunkText.split(/\s+/);
-            const overlapText = prevWords.slice(-Math.min(overlap, prevWords.length)).join(' ');
-            
-            currentChunk = [overlapText, paragraph.trim()];
-            currentWordCount = overlapText.split(/\s+/).length + paragraphWordCount;
-        } else {
-            // Add paragraph to current chunk
-            currentChunk.push(paragraph.trim());
-            currentWordCount += paragraphWordCount;
-        }
+    console.log(`📝 Total words: ${words.length}, Chunk size: ${chunkSize}, Overlap: ${overlap}`);
+    
+    // If document is smaller than chunk size, return single chunk
+    if (words.length <= chunkSize) {
+        return [{
+            content: cleanedText,
+            chunkIndex: 0,
+            pageNumber: 0
+        }];
     }
-
-    // Add the last chunk
-    if (currentChunk.length > 0) {
+    
+    // Create chunks with overlap
+    const chunks = [];
+    let startIndex = 0;
+    let chunkIndex = 0;
+    
+    while (startIndex < words.length) {
+        const endIndex = Math.min(startIndex + chunkSize, words.length);
+        const chunkWords = words.slice(startIndex, endIndex);
+        
         chunks.push({
-            content: currentChunk.join('\n\n'),
-            chunkIndex: chunkIndex,
+            content: chunkWords.join(' '),
+            chunkIndex: chunkIndex++,
             pageNumber: 0
         });
+        
+        // Move start index forward, accounting for overlap
+        startIndex += (chunkSize - overlap);
+        
+        console.log(`✅ Created chunk ${chunkIndex - 1}: words ${startIndex - (chunkSize - overlap)} to ${endIndex}`);
     }
-
-    // Fallback: if no chunks created, split by words
-    if (chunks.length === 0 && cleanedText.length > 0) {
-        const allWords = cleanedText.split(/\s+/);
-        for (let i = 0; i < allWords.length; i += (chunkSize - overlap)) {
-            const chunkWords = allWords.slice(i, i + chunkSize);
-            chunks.push({
-                content: chunkWords.join(' '),
-                chunkIndex: chunkIndex++,
-                pageNumber: 0
-            });
-            if (i + chunkSize >= allWords.length) break;
-        }
-    }
-
+    
+    console.log(`📦 Total chunks created: ${chunks.length}`);
     return chunks;
 };
 

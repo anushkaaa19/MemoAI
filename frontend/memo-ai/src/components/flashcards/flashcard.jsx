@@ -14,15 +14,12 @@ const Flashcard = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const speechButtonRef = useRef(null);
-  
-  // 🔥 FIX: Use local state for isStarred that updates when prop changes
-  const [isStarred, setIsStarred] = useState(flashcard?.isStarred || false);
-
-  // 🔥 FIX: Update local state when flashcard prop changes
   useEffect(() => {
-    setIsStarred(flashcard?.isStarred || false);
-  }, [flashcard?.isStarred]);
-
+  console.log("FLASHCARD PROP CHANGED", {
+    id: flashcard._id,
+    isStarred: flashcard.isStarred
+  });
+}, [flashcard]);
   // Handle keyboard navigation
   useEffect(() => {
     if (!showNavigation) return;
@@ -51,17 +48,16 @@ const Flashcard = ({
     setTimeout(() => setIsAnimating(false), 500);
   }, [isFlipped, isAnimating]);
 
-  const handleToggleStar = (e) => {
-    e.stopPropagation();
-    
-    // 🔥 FIX: Optimistically update UI immediately
-    setIsStarred(!isStarred);
-    
-    // Call the parent's toggle function
-    if (onToggleStar) {
-      onToggleStar(flashcard._id || flashcard.id);
-    }
-  };
+const handleToggleStar = (e) => {
+  e.stopPropagation();
+
+  if (onToggleStar) {
+    onToggleStar(
+  flashcard._id || flashcard.id,
+  flashcard.isStarred
+);
+  }
+};
 
   const handleSpeak = (e, text) => {
     e.stopPropagation();
@@ -81,7 +77,6 @@ const Flashcard = ({
           button.classList.add('text-blue-500', 'scale-110');
         }
       };
-      
       utterance.onend = () => {
         if (button) {
           button.classList.remove('text-blue-500', 'scale-110');
@@ -102,7 +97,12 @@ const Flashcard = ({
 
   // Review statistics
   const reviewCount = flashcard?.reviewCount || 0;
-
+console.log(
+  "Rendering card",
+  flashcard._id,
+  "isStarred:",
+  flashcard.isStarred
+);
   return (
     <div className="relative w-full max-w-3xl mx-auto">
       {/* Card counter and stats bar */}
@@ -209,7 +209,7 @@ const Flashcard = ({
                       <span className="text-sm font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
                         ANSWER
                       </span>
-                      {isStarred && (
+                      {flashcard?.isStarred && (
                         <span className="text-xs font-medium bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full flex items-center gap-1">
                           <Star className="w-3 h-3 fill-yellow-500" /> Starred
                         </span>
@@ -253,13 +253,13 @@ const Flashcard = ({
         <button
           onClick={handleToggleStar}
           className={`absolute -top-3 -right-3 z-20 p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-            isStarred 
+            flashcard?.isStarred 
               ? 'bg-yellow-400 hover:bg-yellow-500' 
               : 'bg-white hover:bg-gray-50'
           }`}
-          aria-label={isStarred ? "Remove star" : "Add star"}
+          aria-label={flashcard?.isStarred ? "Remove star" : "Add star"}
         >
-          {isStarred ? (
+          {flashcard?.isStarred ? (
             <Star className="w-5 h-5 text-white fill-white" strokeWidth={1.5} />
           ) : (
             <StarOff className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
