@@ -227,7 +227,7 @@ const renderQuizzesTab = () => {
                 <span>{formatFileSize(document.fileSize)}</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  Uploaded {moment(document.createdAt).fromNow()}
+                  Uploaded {moment(document.uploadDate).fromNow()}
                 </span>
                 {/* Use calculated totalFlashcards instead of document.flashcardCount */}
                 {totalFlashcards > 0 && (

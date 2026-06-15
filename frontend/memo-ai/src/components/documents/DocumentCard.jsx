@@ -27,6 +27,8 @@ const formatFileSize = (bytes) => {
 
 const DocumentCard = ({ document, onDelete }) => {
   const navigate = useNavigate();
+  console.log("createdAt:", document.createdAt);
+console.log("fromNow:", moment(document.createdAt).fromNow());
 
   const handleNavigate = () => {
     navigate(`/documents/${document._id}`);
@@ -184,8 +186,8 @@ const DocumentCard = ({ document, onDelete }) => {
       >
         <Clock className="w-3.5 h-3.5" strokeWidth={2} />
         <span>
-          Uploaded {moment(document.createdAt).fromNow()}
-        </span>
+  Uploaded {moment(document.uploadDate).fromNow()}
+</span>
       </div>
     </div>
 

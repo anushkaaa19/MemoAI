@@ -114,7 +114,7 @@ export const getDocuments = async (req, res, next) => {
                 }
             },
           {
-    $sort: { createdAt: -1 }  // Or uploadDate: -1 depending on your schema
+    $sort: { uploadDate: -1 }  // Or createdAt: -1 depending on your schema
 }
         ]);
         

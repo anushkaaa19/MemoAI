@@ -20,7 +20,6 @@ const DocumentListPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
-
   const fetchDocuments = async () => {
     try {
       const response = await documentService.getDocuments();

@@ -3,9 +3,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Award, BarChart2, Play, Clock, Brain } from 'lucide-react';
 import moment from 'moment';
-
 const QuizCard = ({ quiz, onDelete }) => {
   const hasAttempted = !!quiz.completedAt;
+  const totalQuestions = quiz.questions?.length || 0;
   return (
     <div className="group bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-purple-200 transition-all overflow-hidden">
       <div className="p-5">

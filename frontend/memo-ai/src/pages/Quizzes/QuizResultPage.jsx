@@ -85,7 +85,7 @@ const QuizResultPage = () => {
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
           <Award className="w-20 h-20 text-purple-600 mx-auto mb-4" />
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {results?.score}/{results?.total}
+            {results?.quiz?.score}/{(results?.quiz?.totalQuestions)*10}
           </h1>
           <p className="text-gray-600 mb-6">Your Score</p>
           
