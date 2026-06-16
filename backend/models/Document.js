@@ -38,7 +38,8 @@ const documentSchema = new mongoose.Schema({
         chunkIndex: {
             type: Number,
             required: true,
-        }
+        },
+        embedding: { type: [Number], default: [] } // <--- Add this!
     }],
     uploadDate: {
         type: Date,

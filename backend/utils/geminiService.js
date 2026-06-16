@@ -1,3 +1,4 @@
+
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 
@@ -16,11 +17,11 @@ const ai = new GoogleGenAI({
 
 // CORRECT model names from your available models list
 const MODELS = [
-    'models/gemini-2.5-flash',           // Best balance of speed and quality
-    'models/gemini-2.0-flash',           // Fast and versatile
-    'models/gemini-2.5-flash-lite',      // Lightweight version
-    'models/gemini-2.0-flash-lite',      // Fastest, most affordable
-    'models/gemini-flash-latest',        // Latest flash model
+    'models/gemini-2.5-flash',          // Best balance of speed and quality
+    'models/gemini-2.0-flash',          // Fast and versatile
+    'models/gemini-2.5-flash-lite',     // Lightweight version
+    'models/gemini-2.0-flash-lite',     // Fastest, most affordable
+    'models/gemini-flash-latest',       // Latest flash model
 ];
 
 // Retry helper function
@@ -63,6 +64,44 @@ const callWithRetry = async (prompt, maxRetries = 2) => {
     throw new Error(`All models failed. Last error: ${lastError?.message}`);
 };
 
+/**
+ * Generate a vector embedding for a given text chunk
+ * @param {string} text - The text chunk to embed
+ * @returns {Promise<Array<number>>} - High-dimensional vector array
+ */
+/**
+ * Generate a vector embedding for a given text chunk
+ * @param {string} text - The text chunk to embed
+ * @returns {Promise<Array<number>>} - High-dimensional vector array
+ *//**
+ * Generate a vector embedding for a given text chunk
+ * @param {string} text - The text chunk to embed
+ * @returns {Promise<Array<number>>} - High-dimensional vector array
+ */
+export const generateEmbedding = async (text) => {
+    try {
+        // Updated to use the correct model name required by the new @google/genai SDK
+        const response = await ai.models.embedContent({
+            model: 'gemini-embedding-001', 
+            contents: text,
+            config: {
+                outputDimensionality: 768 // 👈 ADD THIS CONFIGURATION BLOCK
+            }
+        });
+
+        // Thorough handling to extract values safely
+        if (response && response.embedding && response.embedding.values) {
+            return response.embedding.values;
+        } else if (response && response.embeddings && response.embeddings[0] && response.embeddings[0].values) {
+            return response.embeddings[0].values;
+        }
+        
+        throw new Error('Invalid embedding structure returned from Gemini');
+    } catch (error) {
+        console.error('❌ Error in generateEmbedding:', error.message);
+        throw new Error(`Failed to generate vector embedding: ${error.message}`);
+    }
+};
 export const generateFlashcards = async (text, count = 10) => {
     try {
         console.log(`📝 Generating ${count} flashcards...`);
@@ -78,7 +117,6 @@ export const generateFlashcards = async (text, count = 10) => {
         ${text.substring(0, 8000)}`;
         
         const response = await callWithRetry(prompt);
-        
         const generatedText = response.text;
         
         if (!generatedText) {
@@ -207,7 +245,8 @@ export const generateSummary = async (text) => {
 
 export const chatWithContext = async (question, chunks) => {
     try {
-        const context = chunks.map((c, i) => `[Chunk ${i + 1}]:\n${c.content}`).join('\n\n');
+        // FIX: Handles mapping over both 'text' and 'content' fields transparently
+        const context = chunks.map((c, i) => `[Chunk ${i + 1}]:\n${c.text || c.content}`).join('\n\n');
         
         const prompt = `Based on the following context from a document, answer the user's question. If the answer is not found in the context, say "I don't have enough information to answer that question based on the document."
         
@@ -219,7 +258,6 @@ export const chatWithContext = async (question, chunks) => {
         Answer:`;
         
         const response = await callWithRetry(prompt);
-        
         return response.text.trim();
         
     } catch (error) {
@@ -274,3 +312,4 @@ export const listAvailableModels = async () => {
         console.error('Error listing models:', error);
     }
 };
+

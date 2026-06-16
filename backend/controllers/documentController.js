@@ -1,11 +1,13 @@
-import path from 'path';  // Add this line
+
+import path from 'path';
+import fs from 'fs/promises';
+import mongoose from 'mongoose';
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
-import fs from 'fs/promises';
-import mongoose from 'mongoose';
+import * as geminiService from '../utils/geminiService.js'; // 🧠 FIX 1: Added missing service import
 
 // @desc    Upload PDF document
 // @route   POST /api/documents/upload
@@ -19,8 +21,8 @@ export const uploadDocument = async (req, res, next) => {
                 statusCode: 400
             });
         }
-        const {title} = req.body;
-        if(!title){
+        const { title } = req.body;
+        if (!title) {
             await fs.unlink(req.file.path);
             return res.status(400).json({
                 success: false,
@@ -36,45 +38,78 @@ export const uploadDocument = async (req, res, next) => {
             filePath: fileUrl,
             fileName: req.file.originalname,
             fileSize: req.file.size,
-            status:'processing',
+            status: 'processing',
         });
-        processPDF(document._id, req.file.path).catch(err=>{
-            console.error('Error processing PDF:', err);
-        }) ;
+        
+        processPDF(document._id, req.file.path).catch(err => {
+            console.error('Error processing PDF background routine:', err);
+        }); 
         
         res.status(201).json({
             success: true,
-            data:document,
-            message: 'Document uploaded and processed successfully',
+            data: document,
+            message: 'Document uploaded and processing started in background',
             statusCode: 201
         });
         
     } catch (error) {
-        // Clean up file on error
         if (req.file) {
             await fs.unlink(req.file.path).catch(() => {});
         }
-        
         next(error);
     }
 };
+
+// Background worker function to parse and embed text
 const processPDF = async (documentId, filePath) => {
     try {
-        const {text} = await extractTextFromPDF(filePath);
-        const chunks = chunkText(text,500,50);
+        const { text } = await extractTextFromPDF(filePath);
+        const basicChunks = chunkText(text, 500, 50);
+        
+        console.log(`🌀 Generating Gemini embeddings for ${basicChunks.length} chunks...`);
+        const chunksWithEmbeddings = [];
+
+        for (const chunk of basicChunks) {
+            try {
+                // 🧠 FIX 2: Swapped chunk.content to chunk.text to match textChunker keys
+                const textToEmbed = chunk.text || chunk.content; 
+                
+                const embeddingVector = await geminiService.generateEmbedding(textToEmbed);
+                
+                chunksWithEmbeddings.push({
+                    content: textToEmbed, // Matches your document collection schema field
+                    index: chunk.chunkIndex ?? chunk.index,
+                    pageNumber: chunk.pageNumber || 0,
+                    embedding: embeddingVector 
+                });
+            } catch (embedError) {
+                console.error(`⚠️ Failed to generate embedding for chunk index ${chunk.chunkIndex}:`, embedError.message);
+                chunksWithEmbeddings.push({
+                    content: chunk.text || chunk.content,
+                    chunkIndex: chunk.chunkIndex ?? chunk.index,
+                    pageNumber: chunk.pageNumber || 0,
+                    embedding: [] 
+                });
+            }
+        }
+
+        // Save updated chunks with true vector payloads
         await Document.findByIdAndUpdate(documentId, {
             extractedText: text,
-            chunks: chunks,
-            status:"ready",
+            chunks: chunksWithEmbeddings,
+            status: "ready",
         });
-        console.log(`Document ${documentId} processed with ${chunks.length} chunks.`);
+        
+        console.log(`✅ Document ${documentId} processed successfully with ${chunksWithEmbeddings.length} semantic vectors.`);
     } catch (error) {
-        console.error(`Error processing document ${documentId}:`, error);
+        console.error(`❌ Fatal error processing document ${documentId}:`, error);
         await Document.findByIdAndUpdate(documentId, {
-            status:"error",
+            status: "error",
         });
     } 
 };
+
+// @desc    Get all documents for logged-in user
 // @route   GET /api/documents
 // @access  Private
 export const getDocuments = async (req, res, next) => {
@@ -88,7 +123,7 @@ export const getDocuments = async (req, res, next) => {
                     from: 'flashcards',
                     localField: '_id',
                     foreignField: 'documentId',
-                    as: 'flashcardData',  // Changed from 'flashcards'
+                    as: 'flashcardData',
                 }
             },
             {
@@ -96,26 +131,26 @@ export const getDocuments = async (req, res, next) => {
                     from: 'quizzes',
                     localField: '_id',
                     foreignField: 'documentId',
-                    as: 'quizData',  // Changed from 'quizzes'
+                    as: 'quizData',
                 }
             },
             {
                 $addFields: {
-                    flashcardCount: { $size: '$flashcardData' },  // Use the 'as' name
-                    quizCount: { $size: '$quizData' },  // Use the 'as' name
+                    flashcardCount: { $size: '$flashcardData' },
+                    quizCount: { $size: '$quizData' },
                 }
             },
             {
                 $project: {
                     extractedText: 0,
                     chunks: 0,
-                    flashcardData: 0,  // Remove the lookup data
-                    quizData: 0,       // Remove the lookup data
+                    flashcardData: 0,
+                    quizData: 0,
                 }
             },
-          {
-    $sort: { uploadDate: -1 }  // Or createdAt: -1 depending on your schema
-}
+            {
+                $sort: { createdAt: -1 }
+            }
         ]);
         
         res.status(200).json({
@@ -130,6 +165,7 @@ export const getDocuments = async (req, res, next) => {
         next(error);
     }
 };
+
 // @desc    Get single document with chunks
 // @route   GET /api/documents/:id
 // @access  Private
@@ -137,7 +173,7 @@ export const getDocument = async (req, res, next) => {
     try {
         const document = await Document.findOne({
             _id: req.params.id,
-            userId: req.user._id  // ✅ Fixed: use 'userId' not 'user'
+            userId: req.user._id
         });
         
         if (!document) {
@@ -148,7 +184,6 @@ export const getDocument = async (req, res, next) => {
             });
         }
         
-        // Get associated flashcards and quizzes
         const flashcardDoc = await Flashcard.findOne({ 
             documentId: document._id,
             userId: req.user._id
@@ -162,7 +197,6 @@ export const getDocument = async (req, res, next) => {
         const flashcardCount = flashcardDoc ? flashcardDoc.cards.length : 0;
         const quizCount = quizzes.length;
         
-        // Convert to object and add counts
         const documentData = document.toObject();
         documentData.flashcardCount = flashcardCount;
         documentData.quizCount = quizCount;
@@ -178,14 +212,15 @@ export const getDocument = async (req, res, next) => {
         next(error);
     }
 };
-// @desc    Delete document
+
+// @desc    Delete document and assets
 // @route   DELETE /api/documents/:id
 // @access  Private
 export const deleteDocument = async (req, res, next) => {
     try {
         const document = await Document.findOne({
             _id: req.params.id,
-            userId: req.user._id  // ✅ Fixed: use 'userId' not 'user'
+            userId: req.user._id
         });
         
         if (!document) {
@@ -196,10 +231,8 @@ export const deleteDocument = async (req, res, next) => {
             });
         }
         
-        // ✅ FIX: Extract filename from URL to delete physical file
         if (document.filePath) {
             try {
-                // Get the filename from the URL
                 const filename = document.filePath.split('/uploads/documents/')[1];
                 if (filename) {
                     const filePath = path.join(process.cwd(), 'uploads', 'documents', filename);
@@ -207,11 +240,10 @@ export const deleteDocument = async (req, res, next) => {
                     console.log(`Deleted file: ${filePath}`);
                 }
             } catch (fileError) {
-                console.error('Error deleting file:', fileError);
+                console.error('Error deleting physical file:', fileError);
             }
         }
         
-        // Delete associated flashcards and quizzes
         await Flashcard.deleteMany({ 
             documentId: document._id, 
             userId: req.user._id 
@@ -222,12 +254,11 @@ export const deleteDocument = async (req, res, next) => {
             userId: req.user._id 
         });
         
-        // Delete document
         await document.deleteOne(); 
         
         res.status(200).json({
             success: true,
-            message: 'Document and all associated content deleted successfully',
+            message: 'Document and all associated assets deleted successfully',
             statusCode: 200
         });
     } catch (error) {
@@ -235,3 +266,4 @@ export const deleteDocument = async (req, res, next) => {
         next(error);
     }   
 };
+
