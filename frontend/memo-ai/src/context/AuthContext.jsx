@@ -1,59 +1,72 @@
-import React,{createContext,useContext,useState,useEffect} from "react";
-const AuthContext=createContext();
-export const useAuth=()=>{
-    const context=useContext(AuthContext);
-    if(!context){
-      throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
+import React, { createContext, useContext, useState, useEffect } from "react";
+import authService from "../services/authService";
+import { setAccessToken, clearAccessToken } from "../utils/axiosInstance";
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // On app load — try to restore session via refresh token cookie
+  // If cookie is valid, server returns a new access token silently
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      // Cookie is sent automatically — if it's valid we get a new access token
+      const { data } = await authService.refresh();
+      setAccessToken(data.accessToken);
 
-      if (token && userStr) {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        setIsAuthenticated(true);
-      }
+      // Now fetch the actual user profile
+      const profile = await authService.getProfile();
+      setUser(profile.data);
+      setIsAuthenticated(true);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      logout();
+      // Refresh token missing or expired — user must log in
+      clearAccessToken();
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = (userData, token) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = (userData) => {
+    // accessToken already set inside authService.login()
+    // No localStorage, no token passed here at all
     setUser(userData);
     setIsAuthenticated(true);
     setLoading(false);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-    setLoading(false);
+  const logout = async () => {
+    try {
+      await authService.logout(); // clears httpOnly cookie on server
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      clearAccessToken();
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
-  const updateUser=(updatedUserData)=>{
-    const newUserData={...user,...updatedUserData};
-    localStorage.setItem('user',JSON.stringify(newUserData));
-    setUser(newUserData);
-  }
+
+  const updateUser = (updatedUserData) => {
+    // No localStorage — just update React state
+    setUser((prev) => ({ ...prev, ...updatedUserData }));
+  };
 
   const value = {
     user,
@@ -62,8 +75,12 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     checkAuthStatus,
-    updateUser
+    updateUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };

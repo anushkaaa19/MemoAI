@@ -3,6 +3,9 @@ setDefaultResultOrder('ipv4first');
 setServers(['8.8.8.8', '8.8.4.4']);
 import dotenv from 'dotenv';
 dotenv.config();
+import cookieParser from 'cookie-parser';
+
+// Add this BEFORE your routes
 import connectDB from './config/db.js';
 import express from 'express';
 import cors from 'cors';
@@ -24,14 +27,16 @@ const app = express();
 
 // Connect to MongoDB
 connectDB();
-
-// Middleware to handle CORS
 app.use(cors({
-    origin: "*",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 }));
+app.use(cookieParser());
+
+// Middleware to handle CORS
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
