@@ -72,7 +72,7 @@ axiosInstance.interceptors.response.use(
       try {
         // Cookie is sent automatically — no body needed
         const { data } = await axios.post(
-          `${BASE_URL}/auth/refresh`,
+          `${BASE_URL}/api/auth/refresh`,
           {},
           { withCredentials: true }
         );
