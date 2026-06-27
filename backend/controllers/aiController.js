@@ -109,7 +109,6 @@ export const generateSummary = async (req, res, next) => {
         next(error);
     }
 };
-
 export const chat = async (req, res, next) => {
     try {
         const { question, documentId } = req.body;
@@ -117,62 +116,54 @@ export const chat = async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'Invalid request body', statusCode: 400 });
         }
 
-        // 1. Fetch the parent document directly
-        const document = await Document.findOne({ _id: documentId, userId: req.user._id });
-        if (!document || !document.chunks || document.chunks.length === 0) {
-            return res.status(404).json({ success: false, error: 'Document or text chunks not found', statusCode: 404 });
-        }
-
-        console.log(`📡 Incoming Chat Query: "${question}"`);
-        
-        // 2. Generate the query embedding vector
         const queryVector = await geminiService.generateEmbedding(question);
 
-        console.log(`⚡ Running In-Memory Vector Proximity Match...`);
-
-        // Cosine Similarity Formula helper
-        const calculateSimilarity = (vecA, vecB) => {
-            if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-            let dotProduct = 0, normA = 0, normB = 0;
-            for (let i = 0; i < vecA.length; i++) {
-                dotProduct += vecA[i] * vecB[i];
-                normA += vecA[i] * vecA[i];
-                normB += vecB[i] * vecB[i];
+        // 1. Vector Search
+        const searchResults = await Document.aggregate([
+            {
+                $vectorSearch: {
+                    index: "autoembed_index",
+                    path: "chunks.embedding",
+                    queryVector: queryVector,
+                    numCandidates: 100,
+                    limit: 3
+                }
+            },
+            {
+                // This 'unwinds' the array so we get individual chunk objects
+                $unwind: "$chunks"
+            },
+            {
+                // This adds the score so we can see how relevant they are
+                $addFields: {
+                    score: { $meta: "vectorSearchScore" }
+                }
+            },
+            {
+                // Only project the fields we need
+                $project: {
+                    _id: 0,
+                    content: "$chunks.content",
+                    index: "$chunks.chunkIndex",
+                    score: 1
+                }
             }
-            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-        };
+        ]);
 
-        // 3. Score every chunk locally via JS using your Mongoose schema keys
-        const scoredChunks = document.chunks.map(chunk => {
-            const similarity = calculateSimilarity(queryVector, chunk.embedding);
-            return {
-                index: chunk.chunkIndex,
-                text: chunk.content,
-                score: similarity
-            };
-        });
+        console.log("🔍 Search Results (Raw):", JSON.stringify(searchResults, null, 2));
 
-        // 4. Sort and isolate top 3 target context elements
-        const precisionResults = scoredChunks
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3);
-
-        console.log("📡 Highly Specific Chunks Found (Chat Fix):", JSON.stringify(precisionResults, null, 2));
-
-        if (!precisionResults || precisionResults.length === 0 || !precisionResults[0].text) {
+        // 2. Format results for geminiService
+        // Your current service expects an array of objects with {text} or {content}
+        if (!searchResults || searchResults.length === 0) {
             return res.status(200).json({
                 success: true,
-                data: { 
-                    question, 
-                    answer: "I don't have enough information to answer that question based on the document." 
-                }
+                data: { question, answer: "I don't have enough information." }
             });
         }
 
-        // 5. Build prompt payload structure and send to Gemini
-        const answer = await geminiService.chatWithContext(question, precisionResults);
-        const chunkIndices = precisionResults.map(chunk => chunk.index ?? 0);
-
+        // 3. Send to AI
+        const answer = await geminiService.chatWithContext(question, searchResults);
+        const chunkIndices = searchResults.map(c => c.index);
         // 6. Update conversational histories
         const chatHistory = await ChatHistory.findOneAndUpdate(
             { userId: req.user._id, documentId: documentId },
@@ -206,51 +197,43 @@ export const explainConcept = async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'Invalid request body', statusCode: 400 });
         }
 
-        const document = await Document.findOne({ _id: documentId, userId: req.user._id }).lean();
-        if (!document || !document.chunks || document.chunks.length === 0) {
-            return res.status(404).json({ success: false, error: 'Document not found', statusCode: 404 });
-        }
-
-        console.log(`🔄 Encoding concept vector lookup for: "${concept}"`);
+        // 1. Generate the query embedding
         const queryVector = await geminiService.generateEmbedding(concept);
 
-        const calculateSimilarity = (vecA, vecB) => {
-            if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-            let dotProduct = 0, normA = 0, normB = 0;
-            for (let i = 0; i < vecA.length; i++) {
-                dotProduct += vecA[i] * vecB[i];
-                normA += vecA[i] * vecA[i];
-                normB += vecB[i] * vecB[i];
+        // 2. Use MongoDB Atlas Vector Search (Database-native retrieval)
+        const precisionResults = await Document.aggregate([
+            {
+                $vectorSearch: {
+                    index: "autoembed_index", // MUST match the index name in Atlas
+                    path: "chunks.embedding",
+                    queryVector: queryVector,
+                    numCandidates: 100,
+                    limit: 2
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    chunks: {
+                        $map: {
+                            input: "$chunks",
+                            as: "chunk",
+                            in: { content: "$$chunk.content", index: "$$chunk.chunkIndex" }
+                        }
+                    }
+                }
             }
-            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-        };
+        ]);
 
-        const scoredChunks = document.chunks.map(chunk => {
-    const similarity = calculateSimilarity(queryVector, chunk.embedding);
-    return {
-        // Safe fallbacks to handle either naming structure
-        index: chunk.chunkIndex !== undefined ? chunk.chunkIndex : chunk.index,
-        text: chunk.content || chunk.text || "",
-        score: similarity
-    };
-});
+        // 3. Format the context for the AI
+        // Note: precisionResults is an array of documents returned by the pipeline
+        const context = precisionResults.length > 0 
+            ? precisionResults.map(doc => doc.chunks[0]?.content).join('\n\n')
+            : "No specific reference text found.";
 
-
-        const precisionResults = scoredChunks
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 2);
-
-        console.log("📡 Highly Specific Chunks Found (Concept Fix):", JSON.stringify(precisionResults, null, 2));
-
-        let context = "";
-        let finalIndices = [];
-        
-        if (precisionResults && precisionResults.length > 0 && precisionResults[0].text) {
-            context = precisionResults.map(chunk => chunk.text).join('\n\n');
-            finalIndices = precisionResults.map(chunk => chunk.index ?? 0);
-        } else {
-            context = "No specific reference text found inside the document context components.";
-        }
+        const finalIndices = precisionResults.length > 0 
+            ? precisionResults.map(doc => doc.chunks[0]?.index ?? 0) 
+            : [];
 
         const explanation = await geminiService.explainConceptWithContext(concept, context);
 
